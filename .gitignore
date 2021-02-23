@@ -2,3 +2,6 @@
 /__pycache__/
 /.idea/
 /transformer/__pycache__/
+trained_models/.DS_Store
+trained_models/modeltrained.chkpt
+*.chkpt

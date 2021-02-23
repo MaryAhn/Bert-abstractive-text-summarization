@@ -165,6 +165,7 @@ class FullTokenizer(object):
     self.vocab = load_vocab(vocab_file)
     self.inv_vocab = {v: k for k, v in self.vocab.items()}
     #self.tokenizer = BasicTokenizer(do_lower_case=do_lower_case)
+
     #self.tokenizer = JumanTokenizer()
     self.tokenizer = MeCabTokenizer()
     self.wordpiece_tokenizer = WordpieceTokenizer(vocab=self.vocab)
@@ -299,35 +300,12 @@ class BasicTokenizer(object):
         return "".join(output)
 
 
-class JumanTokenizer(BasicTokenizer):
-    def __init__(self):
-        from pyknp import Juman
-
-        self.do_lower_case = False
-        self._jumanpp = Juman()
-
-    def tokenize(self, text):
-        """Tokenizes a piece of text with Juman."""
-
-        text = convert_to_unicode(text)
-        text = self._clean_text(text)
-
-
-        juman_result = self._jumanpp.analysis(text.replace(' ', ''))
-        split_tokens = []
-        for mrph in juman_result.mrph_list():
-            split_tokens.extend(self._run_split_on_punc(mrph.midasi))
-
-        output_tokens = whitespace_tokenize(" ".join(split_tokens))
-        return output_tokens
-
-
 class MeCabTokenizer(BasicTokenizer):
   def __init__(self):
     import MeCab
 
     self.do_lower_case = False
-    self._mecab = MeCab.Tagger('-Owakati')
+    self._mecab = MeCab.Tagger('-d /usr/local/lib/mecab/dic/mecab-ko-dic')
 
   def tokenize(self, text):
     """Tokenizes a piece of text with Juman."""

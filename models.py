@@ -10,7 +10,7 @@ class AbstractiveTextSummarizationUsingBert(nn.Module):
 
         super().__init__()
 
-        self.encoder = BertModel.from_pretrained(bert_model_path)
+        self.bert = BertModel.from_pretrained(bert_model_path)
         self.config = BertConfig(bert_model_path+'bert_config.json')
         self.decoder = Decoder(
             n_tgt_vocab=n_tgt_vocab, len_max_seq=len_max_seq,
@@ -33,7 +33,7 @@ class AbstractiveTextSummarizationUsingBert(nn.Module):
     def forward(self, src_seq, src_sen, tgt_seq, tgt_pos):
         tgt_seq, tgt_pos = tgt_seq[:, :-1], tgt_pos[:, :-1]
 
-        enc_output, _ = self.encoder(src_seq, src_sen, output_all_encoded_layers=False)
+        enc_output, _ = self.bert(src_seq, src_sen, output_all_encoded_layers=False)
         dec_output, *_ = self.decoder(tgt_seq, tgt_pos, src_seq, enc_output)
 
 #        o = self.o_l(dec_output)

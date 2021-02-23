@@ -43,7 +43,7 @@ def main():
             #            tgt_word2idx=preprocess_data['dict']['tgt'],
             tgt_word2idx=data['dict']['tgt'],
             #            src_insts=test_src_insts),
-            src_insts=data['valid']['src'][0:10]),
+            src_insts=data['valid']['src'][0:1]),
         num_workers=2,
         batch_size=opt.batch_size,
         collate_fn=src_collate_fn)

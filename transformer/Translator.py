@@ -18,8 +18,8 @@ class Summarizer(object):
         self.model_opt = model_opt
 
         model = AbstractiveTextSummarizationUsingBert(
-#            model_opt.bert_path,
-            'data/checkpoint/',
+           model_opt.bert_path,
+            # 'data/checkpoint/',
             model_opt.tgt_vocab_size,
             model_opt.max_token_seq_len,
             d_k=model_opt.d_k,
@@ -43,7 +43,7 @@ class Summarizer(object):
 
     def translate_batch(self, src_seq, src_pos):
 
-        def get_inst_idx_to_tensor_position_map(inst_idx_list):
+        def get_inst_idx_to_tensor_position_map(inst_idx_list): # input index to position map
             return {inst_idx: tensor_position for tensor_position, inst_idx in enumerate(inst_idx_list)}
 
         def collect_active_part(beamed_tensor, curr_active_inst_idx, n_prev_active_inst, n_bm):
@@ -53,13 +53,13 @@ class Summarizer(object):
 
             beamed_tensor = beamed_tensor.view(n_prev_active_inst, -1)
             beamed_tensor = beamed_tensor.index_select(0, curr_active_inst_idx)
-            beamed_tensor = beamed_tensor.view(*new_shape)
+            beamed_tensor = beamed_tensor.view(*new_shape) # 크기 맞춰주는 과정
 
             return beamed_tensor
 
         def collate_active_info(
                 src_seq, src_enc, inst_idx_to_position_map, active_inst_idx_list):
-            # Sentences which are still active are collected,
+            # Sentences which are still active are collected, active가 아마 beam search에서 살아남은 애들을 얘기하는 게 아닐까...
             # so the decoder will not run on completed sentences.
             n_prev_active_inst = len(inst_idx_to_position_map)
             active_inst_idx = [inst_idx_to_position_map[k] for k in active_inst_idx_list]
@@ -80,11 +80,11 @@ class Summarizer(object):
                 return dec_partial_seq
 
             def prepare_beam_dec_pos(len_dec_seq, n_active_inst, n_bm):
-                dec_partial_pos = torch.arange(1, len_dec_seq + 1, dtype=torch.long, device=self.device)
-                dec_partial_pos = dec_partial_pos.unsqueeze(0).repeat(n_active_inst * n_bm, 1)
+                dec_partial_pos = torch.arange(1, len_dec_seq + 1, dtype=torch.long, device=self.device) # one position map
+                dec_partial_pos = dec_partial_pos.unsqueeze(0).repeat(n_active_inst * n_bm, 1) # active한 갯수만큼 position map을 만듬.
                 return dec_partial_pos
 
-            def predict_word(dec_seq, dec_pos, src_seq, enc_output, n_active_inst, n_bm):
+            def predict_word(dec_seq, dec_pos, src_seq, enc_output, n_active_inst, n_bm): # beamed tensor을 decoder에 넣고 정규화
                 dec_output, *_ = self.model.decoder(dec_seq, dec_pos, src_seq, enc_output)
                 dec_output = dec_output[:, -1, :]  # Pick the last step: (bh * bm) * d_h
                 dec_output = self.model.tgt_word_prj(dec_output)
@@ -122,14 +122,14 @@ class Summarizer(object):
                 scores, tail_idxs = inst_dec_beams[inst_idx].sort_scores()
                 all_scores += [scores[:n_best]]
 
-                hyps = [inst_dec_beams[inst_idx].get_hypothesis(i) for i in tail_idxs[:n_best]]
+                hyps = [inst_dec_beams[inst_idx].get_hypothesis(i) for i in tail_idxs[:n_best]] # ?
                 all_hyp += [hyps]
             return all_hyp, all_scores
 
         with torch.no_grad():
             #-- Encode
             src_seq, src_pos = src_seq.to(self.device), src_pos.to(self.device)
-            src_enc, _ = self.model.encoder(src_seq, output_all_encoded_layers=False)
+            src_enc, _ = self.model.bert(src_seq, output_all_encoded_layers=False)
 
             #-- Repeat data for beam search
             n_bm = self.opt.beam_size

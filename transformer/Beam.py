@@ -68,6 +68,7 @@ class Beam(object):
                             fail = True
                         ngrams.add(tuple(gram))
                     if fail:
+                        # print('bbb')
                         beam_lk[j] = -10e20
         else:
             beam_lk = word_prob[0]
@@ -82,6 +83,7 @@ class Beam(object):
 
         # bestScoresId is flattened as a (beam x word) array,
         # so we need to calculate which word and beam each score came from
+        # print(best_scores_id, num_words)
         prev_k = best_scores_id / num_words
         self.prev_ks.append(prev_k)
         self.next_ys.append(best_scores_id - prev_k * num_words)
@@ -126,7 +128,10 @@ class Beam(object):
     def get_hypothesis(self, k):
         """ Walk back to construct the full hypothesis. """
         hyp = []
+        # print(self.prev_ks)
+        # print('before', k)
         for j in range(len(self.prev_ks) - 1, -1, -1):
+            # print('after',k)
             hyp.append(self.next_ys[j+1][k])
             k = self.prev_ks[j][k]
 
